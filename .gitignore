@@ -1,0 +1,12 @@
+# Ignore certain folders
+testImages/
+JetsonYolov5/
+foundPlateImages/
+_pycache_/
+
+# Ignore video
+*.avi
+*.mp4
+
+# Ignore json files
+*.json

@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script src="scripts.js"></script>
+    <style>
+            .sidebar {
+        height: 100%; /* 100% Full-height */
+        width: 0; /* 0 width - change this with JavaScript */
+        position: fixed; /* Stay in place */
+        z-index: 1; /* Stay on top */
+        top: 0;
+        left: 0;
+        background-color: #111; /* Black*/
+        overflow-x: hidden; /* Disable horizontal scroll */
+        padding-top: 60px; /* Place content 60px from the top */
+        transition: 0.5s; /* 0.5 second transition effect to slide in the sidebar */
+        }
+
+        /* The sidebar links */
+        .sidebar a {
+        padding: 8px 8px 8px 32px;
+        text-decoration: none;
+        font-size: 25px;
+        color: #818181;
+        display: block;
+        transition: 0.3s;
+        }
+
+        /* When you mouse over the navigation links, change their color */
+        .sidebar a:hover {
+        color: #f1f1f1;
+        }
+
+        /* Position and style the close button (top right corner) */
+        .sidebar .closebtn {
+        position: absolute;
+        top: 0;
+        right: 25px;
+        font-size: 36px;
+        margin-left: 50px;
+        }
+
+        /* The button used to open the sidebar */
+        .openbtn {
+        font-size: 20px;
+        cursor: pointer;
+        background-color: #111;
+        color: white;
+        padding: 10px 15px;
+        border: none;
+        }
+
+        .openbtn:hover {
+        background-color: #444;
+        }
+
+        /* Style page content - use this if you want to push the page content to the right when you open the side navigation */
+        #main {
+        transition: margin-left .5s; /* If you want a transition effect */
+        padding: 20px;
+        }
+
+        /* On smaller screens, where height is less than 450px, change the style of the sidenav (less padding and a smaller font size) */
+        @media screen and (max-height: 450px) {
+        .sidebar {padding-top: 15px;}
+        .sidebar a {font-size: 18px;}
+        }
+    </style>
+    <div id="mySidebar" class="sidebar">
+        <a href="javascript:void(0)" class="closebtn" onclick="closeNav()">&times;</a>
+        <a href="index.html">Overview</a>
+        <a href="plates.html">Add License Plates</a>
+      </div>
+      
+      <div id="main">
+        <button class="openbtn" onclick="openNav()">&#9776; Open Sidebar</button>
+      </div>
+      <script>
+        openNav();
+        closeNav();
+      </script>
+<article>
+    <header>
+        <style>
+            h1 {text-align: center;}
+            p {text-align: center;}
+            div {text-align: center;}
+        </style>
+        <h1>Garage Door Opener</h1>
+        <p>Posted by Alex Neufeld</p>
+        <p>This page is dedicated to my garage door opener.</p>
+        <div id="styleDebug"></div>
+    </header>
+    <div class="topButtonsDiv">
+        <button type="button" class="topButtons" name="Submit" onclick="addPlates('add');">Add new item</button>
+        <button type="button" class="topButtons" name="Save" onclick="saveLicensePlates()">Save</button>
+        <style>
+            .topButtons {
+                /* float: left; */
+                width: 150px;
+                margin-left: 50px;
+                margin-top: 10px;
+                margin-bottom: 20px;
+                display: inline-block;
+                padding: 15px 25px;
+                font-size: 16px;
+                cursor: pointer;
+                text-align: center;
+                text-decoration: none;
+                outline: none;
+                color: #fff;
+                background-color: hsl(244, 100%, 50%);
+                border: none;
+                border-radius: 15px;
+                box-shadow: 0 5px #999;
+            }
+            .topButtons:hover {background-color: hsl(244, 97%, 56%)}
+
+            .topButtons:active {
+                background-color: hsl(239, 100%, 22%);
+                box-shadow: 0 5px #666;
+                transform: translateY(4px);
+            }            
+        </style>
+
+    </div>
+    <fieldset id="fieldset">
+        <legend align="center" id="legend">New License Plates to Add</legend>
+    
+    <!-- <div id="licenseInput"> -->
+        <style>
+            #template {
+                border-radius: 25px;
+                width: 1000px;
+                height: 80px;
+                padding: 1px;
+                background-color: grey;
+                box-shadow: 0px 0px 2px 2px lightslategray;
+                margin-top: 10px;
+                margin-bottom: 10px;
+                left: 50%;
+                margin-left: 450px; 
+            }
+        </style>   
+        <div id="template">
+            <div class="columnText">
+                <label for="field1">License Plate Number:</label><br>
+            </div>
+            <div class="columnInput">
+                <input id="inputElementsId-0" name="field1" type="text"><br>
+            </div>
+            <div class="columnText">
+                <label for="field2">Car User:</label><br>
+            </div>
+            <div class="columnInput">
+                <input id="inputElementsId-1" name="field2" type="text"><br>
+            </div>
+            <!-- <div class="button">
+                <button type="button">Save</button>
+            </div> -->
+            <button class="deleteButton" onclick="removePlate(this);">Delete</button>
+            <!-- <button class="deleteButton">Delete</button> -->
+        
+            <!-- <p>License Plate Number <input type ="text" size="25" name="prof_item" /><br /></p>
+            <p>Owner <input type ="text" size="25" name="prof_duration" /><br /></p> -->
+        </div> 
+        <div id="newItem"></div> 
+        <style>
+            * {
+            box-sizing: border-box;
+            }
+            
+            /* Create four equal columns that floats next to each other */
+            .columnInput {
+            float: left;
+            width: 20%;
+            padding: 5px;
+            margin-top: 20px;
+            margin-bottom: 20px;
+            }
+            .columnText {
+            float: left;
+            width: 10%;
+            padding: 5px;
+            margin-left: 20px;
+            margin-top: 20px;
+            margin-bottom: 20px;
+            }
+            .deleteButton {
+                /* float: left; */
+                width: 150px;
+                margin-left: 50px;
+                margin-top: 10px;
+                display: inline-block;
+                padding: 15px 25px;
+                font-size: 16px;
+                cursor: pointer;
+                text-align: center;
+                text-decoration: none;
+                outline: none;
+                color: #fff;
+                background-color: hsl(0, 100%, 50%);
+                border: none;
+                border-radius: 15px;
+                box-shadow: 0 5px #999;
+            }
+            .deleteButton:hover {background-color: hsl(0, 100%, 50%)}
+
+            .deleteButton:active {
+            background-color: hsl(0, 100%, 22%);
+            box-shadow: 0 5px #666;
+            transform: translateY(4px);
+            }
+            
+            /* Clear floats after the columns
+            .row:after {
+            content: "";
+            display: table;
+            clear: both;
+            } */
+            </style>
+
+    <!-- </div>                     -->
+
+    </fieldset>
+</article>
+<script>
+    loadPlateScript();
+</script>
+</html>
