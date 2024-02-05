@@ -31,14 +31,25 @@ function displayImagesAndURLs(allURL) {
     // url = "/licensePlate/foundPlateImages/2024-01-13%2017%3A29%3A12.505965.jpg";
     // // Get the container element by its ID
     const imageContainer = document.getElementById('imageContainer2');
+    imageContainer.style.display = 'grid';
+    imageContainer.style.gridTemplateColumns = 'repeat(3, 1fr)';
+    imageContainer.style.gap = '20px';
 
     // Loop through the array of image URLs
     allURL.forEach(url => {
+        const galleryItem = document.createElement("div");
+        galleryItem.className = "gallery-item";
+        galleryItem.style.width = '100%';
+
+        const galleryBorder = document.createElement("fieldset");
+
         // Create an image element for each URL
         const imageElement = document.createElement('img');
         imageElement.src = url;
         imageElement.alt = 'Image';
-        imageElement.style.maxWidth = '25%';
+        // galleryItem.style.flex = '0 0 calc(33.33% - 20px)';
+        // galleryItem.style.position = 'relative';
+        imageElement.style.maxWidth = '100%';
         imageElement.style.marginLeft = '4px';
         imageElement.style.marginRight = '4px';
         imageElement.style.marginTop = '10px';
@@ -46,10 +57,14 @@ function displayImagesAndURLs(allURL) {
         // Create a paragraph element for each URL
         const urlParagraph = document.createElement('p');
         urlParagraph.innerHTML = 'Image URL: ' + url;
+        urlParagraph.style.maxWidth = '100%';
 
         // Append the image and the paragraph to the container
-        imageContainer.appendChild(imageElement);
-        // imageContainer.appendChild(urlParagraph);
+        
+        galleryItem.appendChild(urlParagraph);
+        galleryItem.appendChild(imageElement);
+        galleryBorder.appendChild(galleryItem);
+        imageContainer.appendChild(galleryBorder);
     });
 }
 function fetchImages(){
