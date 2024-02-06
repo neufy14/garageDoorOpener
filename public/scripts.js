@@ -56,7 +56,9 @@ function displayImagesAndURLs(allURL) {
 
         // Create a paragraph element for each URL
         const urlParagraph = document.createElement('p');
-        urlParagraph.innerHTML = 'Image URL: ' + url;
+        const lastSlash = url.lastIndexOf("/") + 1;
+        const lastdot = url.lastIndexOf(".");
+        urlParagraph.innerHTML = url.substring(lastSlash, lastdot);
         urlParagraph.style.maxWidth = '100%';
 
         // Append the image and the paragraph to the container
