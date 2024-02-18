@@ -53,7 +53,7 @@ class garageDoorCam:
             # print("self.readyForNewFrame = ", self.readyForNewFrame)
             if self.readyForNewFrame and self.doorClosed:
                 currentFrame = self.frame
-                blankImage = currentFrame
+                blankImage = currentFrame.copy()
                 frameNumber += 1
                 self.readyForNewFrame = False
                 if not config.useLiveVideo:
@@ -111,7 +111,8 @@ class garageDoorCam:
                                 plateFound = False
                                 for char in config.chars2Ignore:
                                     text = text.replace(char, "")
-                                for validPlate in config.validPlates:
+                                # for validPlate in config.validPlates:
+                                for validPlate in self.getValidPlates():
                                     if validPlate.casefold() in text.casefold():
                                         textColor = (50, 255, 0)
                                         plateFound = True
@@ -141,9 +142,20 @@ class garageDoorCam:
                         if plateFound:
                             break
                     cv2.imwrite("testImages/test.jpeg", currentFrame)
+                    cv2.imwrite("testImages/blankTest.jpeg", blankImage)
         videoThread.join()
         doorStatusThread.join()
 
+
+    def getValidPlates(self):
+        validPlate = []
+        doorDataJson = open('doorData.json')
+        data = json.load(doorDataJson)
+        for i in data['validLicensePlates']:
+            validPlate.append(data['validLicensePlates'][i])
+        doorDataJson.close()
+        # print('validPlate = ', validPlate)
+        return validPlate
 
     def checkSavedImageAge(self):
         currentTS = datetime.datetime.now()
@@ -167,7 +179,7 @@ class garageDoorCam:
                 doorStatus = {"doorStatus": "Closed"}
                 with open("doorData.json", "r+") as outfile:
                     allData = json.load(outfile)
-                    print("allData json = ", allData)
+                    # print("allData json = ", allData)
                     outfile.seek(0)
                     allData["doorStatus"] = "Closed"
                     json.dump(allData, outfile)
@@ -178,7 +190,7 @@ class garageDoorCam:
                 doorStatus = {"doorStatus": "Open"}
                 with open("doorData.json", "r+") as outfile:
                     allData = json.load(outfile)
-                    print("allData json = ", allData)
+                    # print("allData json = ", allData)
                     outfile.seek(0)
                     allData["doorStatus"] = "Open"
                     json.dump(allData, outfile)

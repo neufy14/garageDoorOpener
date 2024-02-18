@@ -2,6 +2,7 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const fs = require('fs/promises');
 const path = require('path');
+const { exec } = require('child_process');
 
 const app = express();
 const port = 3000;
@@ -49,7 +50,21 @@ app.post('/save-to-file', (req, res) => {
         }
     });
 });
+app.get('/runScript', (req, res) => {
+    const pythonScript = 'public/licensePlate/doorOpener.py'; // Replace with your actual Python script
 
+    exec(`python ${pythonScript}`, (error, stdout, stderr) => {
+        if (error) {
+            console.error(`Error executing Python script: ${error}`);
+            res.status(500).send('Internal Server Error');
+            return;
+        }
+
+        console.log('Python script output:', stdout);
+        console.error('Python script errors:', stderr);
+        res.send('Python script executed successfully!');
+    });
+});
 app.listen(port, () => {
     console.log(`Server is running at http://localhost:${port}`);
 });

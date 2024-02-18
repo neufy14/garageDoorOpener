@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+<link rel="stylesheet" href="styles.css">
 <head>
     <script src="scripts.js"></script>
     <style>
@@ -91,7 +92,40 @@
     <p>This page is dedicated to my garage door opener.</p>
   </header>
   <p>Live view of the driveway from above the garage door.</p>
-  <div id="doorStatus"></div>
+  <div id="doorStatus">
+    <button type="button" class="garageDoorButton" id="garageDoorButton" name="Open Door" onclick="runScript()"></button>
+    <style>
+        .garageDoorButton {
+            /* float: left; */
+            width: 150px;
+            /* margin-left: 50px; */
+            margin-top: 10px;
+            margin-bottom: 20px;
+            display: inline-block;
+            padding: 15px 25px;
+            font-size: 16px;
+            cursor: pointer;
+            text-align: center;
+            text-decoration: none;
+            outline: none;
+            color: #fff;
+            background-color: hsl(244, 100%, 50%);
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 5px #999;
+        }
+        .garageDoorButton:hover {background-color: hsl(244, 97%, 56%)}
+
+        .garageDoorButton:active {
+            background-color: hsl(239, 100%, 22%);
+            box-shadow: 0 5px #666;
+            transform: translateY(4px);
+        }            
+    </style>  
+    <!-- <script>
+      runScript();
+    </script> -->
+  </div>
   <script>
     showDoorStatus();
   </script>
@@ -109,9 +143,18 @@
     <title>Image Gallery</title>
 </head>
 <body>
-    <div id=imageContainer2 class="imgGallery"></div>
-    <script>
-            loadScript();
-    </script>
+  <div id="modal" class="modal">
+    <div class="modal-content" id="">
+      <span class="close">&times;</span>
+      <i class="arrow left"></i>
+      <img id="modal-img" src="" alt="Modal Image">
+      <i class="arrow right"></i>
+    </div>
+    
+  </div>
+  <div id=imageContainer2 class="imgGallery"></div>
+  <script>
+          loadScript();
+  </script>
 </body>
 </html>

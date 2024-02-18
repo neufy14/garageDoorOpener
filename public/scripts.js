@@ -20,23 +20,39 @@ function showDoorStatus() {
             paragraph.innerHTML = 'The door is currently: ' + obj.doorStatus;
             // Append the paragraph to the body of the document
             doorStatusText.appendChild(paragraph);
+            if (obj.doorStatus == "Closed"){
+                document.getElementById('garageDoorButton').innerText = 'Open Door';
+            }
+            else {
+                document.getElementById('garageDoorButton').innerText = 'Closed Door';
+            }
         })
         .catch(error => {
             console.error('Error fetching JSON:', error);
         });
 }
-
+var lastImgNum = "";
 // Function to display images and URLs
 function displayImagesAndURLs(allURL) {
     // url = "/licensePlate/foundPlateImages/2024-01-13%2017%3A29%3A12.505965.jpg";
     // // Get the container element by its ID
     const imageContainer = document.getElementById('imageContainer2');
+    const modal = document.getElementById('modal');
+    const modalImg = document.getElementById('modal-img');
     imageContainer.style.display = 'grid';
     imageContainer.style.gridTemplateColumns = 'repeat(3, 1fr)';
     imageContainer.style.gap = '20px';
-
+    var numImages = 0;
+    modal.addEventListener('keydown', function(event) {
+        console.log(event.key);
+        if (event.key == "ArrowLeft") {
+            console.log("Arrow pressed");
+        }
+    });    
     // Loop through the array of image URLs
     allURL.forEach(url => {
+        var imageId = "img" + numImages;
+        console.log(imageId);
         const galleryItem = document.createElement("div");
         galleryItem.className = "gallery-item";
         galleryItem.style.width = '100%';
@@ -53,6 +69,27 @@ function displayImagesAndURLs(allURL) {
         imageElement.style.marginLeft = '4px';
         imageElement.style.marginRight = '4px';
         imageElement.style.marginTop = '10px';
+        imageElement.id = imageId;
+        imageElement.addEventListener('mouseenter', function() {
+            this.style.transform = 'scale(1.1)';
+        });
+        imageElement.addEventListener('mouseleave', function() {
+            this.style.transform = 'scale(1)';
+        });
+        imageElement.addEventListener('click', function(event) {
+            if (event.target.tagName == "IMG") {
+                console.log(event.target);
+                console.log(event.target.src);
+                console.log(event.target.id);
+                lastImgNum = event.target.id;
+                // Open modal and display clicked image
+                modalImg.src = event.target.src;
+                // modal.id = event.target.id;
+                document.getElementById(modal.id).setAttribute(modal.id, event.target.id);
+                modalImg.style.maxWidth = '75%';
+                modal.style.display = 'block';
+            }
+        });
 
         // Create a paragraph element for each URL
         const urlParagraph = document.createElement('p');
@@ -65,7 +102,9 @@ function displayImagesAndURLs(allURL) {
         galleryItem.appendChild(imageElement);
         galleryBorder.appendChild(galleryItem);
         imageContainer.appendChild(galleryBorder);
+        numImages += 1;
     });
+    scrollModal();
 }
 function fetchImages(){
     // displayImagesAndURLs();
@@ -81,6 +120,35 @@ function fetchImages(){
 function loadScript() {
     // Add an event listener to the body, triggering the display function on load
     window.addEventListener('load', fetchImages);
+    // window.addEventListener('load', scrollModal);
+}
+function scrollModal() {
+    // Close the modal when the close button or overlay is clicked
+    const modalImg = document.getElementById('modal-img');
+    modal.addEventListener('click', function(event) {
+        console.log(lastImgNum)
+        if (event.target.classList.contains('modal') || event.target.classList.contains('close')) {
+            modal.style.display = 'none';
+        }
+        else if (event.target.classList.value == "arrow right") {
+            console.log("right arrow pressed")
+            var newImgNum = (parseInt(lastImgNum.substring(3)) + 1);
+            console.log("img" + newImgNum.toString());
+        }
+        else if (event.target.classList.value == "arrow left") {
+            console.log("left arrow pressed")
+            var newImgNum = (parseInt(lastImgNum.substring(3)) - 1);
+            console.log("img" + newImgNum.toString());
+        }
+        var newImageSrc = document.getElementById("img" + newImgNum.toString()).src;
+        modalImg.src = newImageSrc;
+        // modal.id = event.target.id;
+        document.getElementById(modal.id).setAttribute(modal.id, event.target.id);
+        modalImg.style.maxWidth = '75%';
+        modal.style.display = 'block';
+        lastImgNum = "img" + newImgNum.toString();
+    });
+
 }
 function showCameraFeed(){
     camUrl = 'http://192.168.0.100/cgi-bin/snapshot.cgi?stream=0';
@@ -231,5 +299,30 @@ function saveLicensePlates() {
         .catch(error => {
             console.error('Error:', error);
         });
+
+}
+function runScript() {
+    fetch("/licensePlate/doorData.json") 
+    .then((res) => { 
+        return res.json(); 
+    })
+    .then(data => {
+        localstorage = JSON.stringify(data);
+        const obj = JSON.parse(localstorage)
+        if (obj.doorStatus == "Closed"){
+            document.querySelector('garageDoorButton').value = 'Closed';
+        }
+        else if (obj.doorStatus == "Open"){
+            document.querySelector('garageDoorButton').value = 'Open';
+        }
+
+    })
+    .catch(error => {
+        console.error('Error fetching JSON:', error);
+    });    
+    fetch('/runScript')
+        .then(response => response.text())
+        .then(data => console.log(data))
+        .catch(error => console.error('Fetch error:', error));
 
 }
