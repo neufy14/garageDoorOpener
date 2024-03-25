@@ -1,0 +1,9 @@
+2024-03-17 15:05:30,915 Starting camera mode program
+2024-03-17 15:05:30,946 Starting new HTTP connection (1): ipinfo.io
+2024-03-17 15:05:31,085 http://ipinfo.io:80 "GET /json HTTP/1.1" 200 334
+2024-03-17 15:05:31,091 Requested http://ipinfo.io/json
+2024-03-17 15:05:31,098 Mode is auto
+2024-03-17 15:05:31,099 Current time is: 2024-03-17 19:05:31.098932+00:00
+2024-03-17 15:05:31,099 Sunrise is: 2024-03-17 10:55:00+00:00
+2024-03-17 15:05:31,099 Sunset is: 2024-03-17 22:57:00+00:00
+2024-03-17 15:05:31,099 Time compare test, currentTime > sunRise: True

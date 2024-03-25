@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<link rel="stylesheet" href="styles.css">
+<head>
+    <script src="scripts.js"></script>
+    <div id="mySidebar" class="sidebar">
+      <a href="javascript:void(0)" class="closebtn" onclick="closeNav()">&times;</a>
+      <a href="index.html">Overview</a>
+      <a href="plates.html">Add License Plates</a>
+      <a href="settings.html">Advanced Settings</a>
+    </div>
+    
+    <div id="main">
+      <button class="openbtn" onclick="openNav()">&#9776; Open Sidebar</button>
+    </div>
+    <script>
+      openNav();
+      closeNav();
+    </script>
+    <!-- Rounded switch -->
+    <div class="toggle-switch-label">
+      <label>Turn program to read license plates on/off.</label>
+    </div>
+    
+    <label class="switch">
+      <input type="checkbox" id="runProgramToggle" onchange = "runCheckPlateProgram()">
+      <!-- <span class="toggle-switch-label">Run program to read license plate.</span> -->
+      <div class="slider round">
+        <span class="on">RUNNING</span>
+        <span class="off">STOPPED</span>
+      </div>
+      <script>
+        getSettings();
+      </script>
+    </label>
+</head>

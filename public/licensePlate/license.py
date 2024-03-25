@@ -8,6 +8,10 @@ import time
 import datetime
 import os
 import json
+import logging
+import cameraMode
+import uuid
+from databaseScript import add2Database
 from easyocr import Reader
 from JetsonYolov5.yoloDet import YoloTRT
 import RPi.GPIO as GPIO
@@ -17,10 +21,24 @@ from collections import deque
 class garageDoorCam:
     def __init__(self):
         print("start")
+        # Create and configure logger
+        logging.basicConfig(filename="newfile.log",
+                            format='%(asctime)s %(message)s',
+                            filemode='a')
+        # Creating an object
+        self.logger = logging.getLogger()
+        
+        # Setting the threshold of logger to DEBUG
+        self.logger.setLevel(logging.DEBUG)
+        self.logger.debug("The start of the log")
+
         videoBuffer = deque()
         # self.videoFile = 0
         self.readyForNewFrame = False
         self.runProgram = True
+        self.runCheckDoor = True
+        self.stopCheckDoorThread = False
+        self.programRunning = True
         self.saveBuffer = False
         self.foundPlatesTS = []
         frameNumber = 0
@@ -48,10 +66,24 @@ class garageDoorCam:
             print("video thread started")
         doorStatusThread = threading.Thread(target=self.checkDoor)
         doorStatusThread.start()
+        monitorCameraModeThread = threading.Thread(target=self.runCameraMonitor)
+        monitorCameraModeThread.start()
         while self.runProgram:
             plateFound = False
+            if self.stopCheckDoorThread:
+                doorStatusThread.join()
+                self.logger.debug("stopping check door thread to change camera")
+                if cameraMode.adjustCamera.isDaytime:
+                    modeSend = "day"
+                else:
+                    modeSend = 'night'
+                cameraMode.adjustCamera.switchMode(modeSend)
+                while cameraMode.adjustCamera.settingsChange:
+                    time.sleep(1)
+                monitorCameraModeThread.start()
+                self.stopCheckDoorThread = False
             # print("self.readyForNewFrame = ", self.readyForNewFrame)
-            if self.readyForNewFrame and self.doorClosed:
+            if self.readyForNewFrame and self.doorClosed and self.programRunning:
                 currentFrame = self.frame
                 blankImage = currentFrame.copy()
                 frameNumber += 1
@@ -112,7 +144,7 @@ class garageDoorCam:
                                 for char in config.chars2Ignore:
                                     text = text.replace(char, "")
                                 # for validPlate in config.validPlates:
-                                for validPlate in self.getValidPlates():
+                                for index, validPlate in enumerate(self.getValidPlates()[0]):
                                     if validPlate.casefold() in text.casefold():
                                         textColor = (50, 255, 0)
                                         plateFound = True
@@ -126,6 +158,16 @@ class garageDoorCam:
                                         print("pin set back low")
                                         GPIO.output(config.setDoorPin, GPIO.LOW)
                                         currentTime = datetime.datetime.now()
+                                        data = (index, validPlate, currentTime)
+                                        self.logger.debug("Index to send to database: %s", str(index))
+                                        self.logger.debug("ValidPlate to send to database: %s", str(validPlate))
+                                        self.logger.debug("Timestamp to send to database: %s", str(currentTime))
+                                        add2Database(data)
+                                        self.logger.debug("Added to the database")
+                                        # Generate a random UUID (version 4)
+                                        random_id = uuid.uuid4()
+                                        # Convert UUID to string
+                                        random_id_str = str(random_id)
                                         cv2.imwrite("foundPlateImages/" + str(currentTime) + ".jpg", currentFrame)
                                         self.foundPlatesTS.append(currentTime)
                                         if len(self.foundPlatesTS) > config.maxStoredImages:
@@ -145,17 +187,20 @@ class garageDoorCam:
                     cv2.imwrite("testImages/blankTest.jpeg", blankImage)
         videoThread.join()
         doorStatusThread.join()
+        monitorCameraModeThread.join()
 
 
     def getValidPlates(self):
         validPlate = []
+        userNames = []
         doorDataJson = open('doorData.json')
         data = json.load(doorDataJson)
         for i in data['validLicensePlates']:
             validPlate.append(data['validLicensePlates'][i])
+            userNames.append(i)
         doorDataJson.close()
         # print('validPlate = ', validPlate)
-        return validPlate
+        return validPlate, userNames
 
     def checkSavedImageAge(self):
         currentTS = datetime.datetime.now()
@@ -172,7 +217,8 @@ class garageDoorCam:
 
     
     def checkDoor(self):
-        while self.runProgram:
+        self.logger.debug("starting check door thread")
+        while self.runCheckDoor and not cameraMode.adjustCamera.settingsChange:
             if GPIO.input(config.readDoorPin) == GPIO.HIGH:
                 #Garage Door is closed
                 self.doorClosed = True
@@ -196,7 +242,19 @@ class garageDoorCam:
                     json.dump(allData, outfile)
                     outfile.truncate()
                 print("the door is open")
+            doorDataJson = open('doorData.json')
+            data = json.load(doorDataJson)
+            if self.programRunning != data['runProgram']:
+                self.programRunning = data['runProgram']
+                if self.programRunning:
+                    self.logger.debug("The program is actively running")
+                else:
+                    self.logger.debug("The program is stopped")
+            doorDataJson.close()
             time.sleep(1)
+        self.stopCheckDoorThread = True
+        self.logger.debug("ending check door thread")
+        
 
 
     def lookForLicensePlate(self, carImage):
@@ -271,34 +329,9 @@ class garageDoorCam:
         self.out = cv2.VideoWriter(config.saveVideoFileName, fourcc, 20.0, (1920, 1080))
         self.bufferOut = cv2.VideoWriter("bufferVideo.avi", fourcc, 20.0, (1920, 1080))
         while self.ret:
-            # self.capture = cv2.VideoCapture(self.videoFile)
             self.ret, self.frame = self.capture.read()
-            #self.readyForNewFrame = True
-            #self.videoBuffer.appendleft(self.frame)
-            #if self.bufferReadyForFrame:
-            #    self.bufferActive = True
-            #    self.bufferReadyForFrame = False
-            #    bufferThread = threading.Thread(target=self.add2Buffer, args=())
-            #    bufferThread.start()
-            #elif self.bufferActive == False and self.bufferReadyForFrame == False:
-            #    bufferThread.join()
-            #    self.bufferReadyForFrame = True
             if config.saveVideo:
                 self.out.write(self.frame)
-            #if self.saveBuffer:
-            #    self.saveBuffer = False
-            #    print("saving buffer video")
-            #    videoWriteThread = threading.Thread(target=self.writeVideo, args=())
-            #    videoWriteThread.start()
-                #for frames in videoBuffer:
-                #    self.bufferOut.write(frames)
-                #self.bufferOut.release()
-                #self.bufferOut = cv2.VideoWriter("bufferVideo.avi", fourcc, 20.0, (1920, 1080))
-                #self.saveBuffer = False
-            #if self.saveVideoComplete:
-            #    videoWriteThread.join()
-            #    self.saveVideoComplete = False
-            # if cv2.waitKey(1) & 0xFF == ord('q'):
             if not self.ret:
                 print("Camera Disconected, trying to reconnect")
                 self.capture.release()
@@ -311,6 +344,7 @@ class garageDoorCam:
                 self.out.release()
                 #self.bufferOut.release()
                 self.runProgram = False
+                self.runCheckDoor = False
                 break
         print("video thread exit")
 
@@ -325,6 +359,9 @@ class garageDoorCam:
         self.videoBuffer.append(self.frame)
         #self.bufferReadyForFrame = True
         self.bufferActive = False
+
+    def runCameraMonitor(self):
+        cameraMode.adjustCamera()
 
 
 garageDoorCam()

@@ -223,7 +223,7 @@ function removePlate(obj) {
 function loadPlateScript() {
     // Add an event listener to the body, triggering the display function on load
     window.addEventListener('load', async function() {
-        const obj = await fetchLicensePlates();
+        const obj = await fetchJson();
         console.log(obj.doorStatus);
         console.log(obj.validLicensePlates);
         for (var i = 0; i < Object.keys(obj.validLicensePlates).length; i++) {
@@ -243,7 +243,7 @@ function loadPlateScript() {
     });
     
 }
-function fetchLicensePlates() {
+function fetchJson() {
     return fetch("/licensePlate/doorData.json") 
     .then((res) => { 
         return res.json(); 
@@ -262,7 +262,7 @@ function fetchLicensePlates() {
     });
 }
 function saveLicensePlates() {
-    fetchLicensePlates()
+    fetchJson()
         .then(result => {
             const existingPlates = result;
             console.log("Save button pressed!")
@@ -327,4 +327,75 @@ function runScript() {
         .then(data => console.log(data))
         .catch(error => console.error('Fetch error:', error));
 
+}
+function submitLogin() {
+    console.log("submit button pressed");
+    const userData = {username: document.getElementById("first").value, password: document.getElementById("password").value};
+    console.log(userData);
+    // Send a POST request to the server
+    fetch("/login", {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(userData),
+    })
+    .then(response => {
+        if (response.ok) {
+            return response.json(); // If the response is OK, parse it as JSON
+        } else {
+            console.log(responses)
+            throw new Error("Network response was not ok.");
+        }
+    })
+    .then(data => {
+        console.log(data); // Handle the response data
+        // Redirect or perform other actions based on the response
+    })
+    .catch(error => {
+        console.error("There was a problem with the fetch operation:", error);
+    });   
+}
+function runCheckPlateProgram() {
+    console.log("runCheckProgram")
+    const runLicenseProgram = document.getElementById("runProgramToggle").checked;
+    console.log("program status = ", runLicenseProgram);
+    fetch("/licensePlate/doorData.json") 
+    .then((res) => { 
+        return res.json(); 
+    })
+    .then(data => {
+        localstorage = JSON.stringify(data);
+        const obj = JSON.parse(localstorage)
+        console.log(obj)
+        if (runLicenseProgram == true){
+            obj["runProgram"] = true;
+        }
+        else if (runLicenseProgram == false){
+            obj["runProgram"] = false;
+        }
+        return fetch('http://192.168.0.42:3000/save-to-file', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(obj),
+        })
+        .then(response => response.text())
+        .then(data => {
+            console.log(data);
+        })
+        .catch(error => {
+            console.error('Error:', error);
+        });
+    })
+    .catch(error => {
+        console.error('Error fetching JSON:', error);
+    });    
+}
+function getSettings() {
+    console.log("on load get settings")
+    window.addEventListener('load', async function() {
+        const obj = await fetchJson();
+        console.log("program status at load = ", obj.runProgram);
+        document.getElementById("runProgramToggle").checked = obj.runProgram;
+    });
 }

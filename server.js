@@ -30,6 +30,35 @@ app.get('/images', async (req, res) => {
 
 app.use(express.json());
 
+
+// Sample users data (replace with your actual user database)
+const users = [
+    { username: 'user1', password: 'password1' },
+    { username: 'user2', password: 'password2' }
+];
+app.use(bodyParser.json());
+// Login route handler
+app.post('/login', (req, res) => {
+    const username = req.body["username"];
+    const password = req.body["password"];
+    // const jsonData = req.body;
+    // const jsonString = JSON.stringify(jsonData, null, 2);
+    // console.log(jsonString["username"]);
+    console.log('Usename from client:', req.body["username"]);
+    res.json({ message: 'Data received successfully' });
+    // Find the user in the users array (you would typically query your database here)
+    const user = users.find(u => u.username === username && u.password === password);
+    console.log(user);
+    if (user) {
+        // Authentication successful
+        console.log("successfully logged in")
+        res.json({message: 'Login successful'});
+    } else {
+        // Authentication failed
+        res.json({message: 'Login unsuccessful'});
+    }
+});
+
 app.post('/save-to-file', (req, res) => {
     console.log("in post request")
     eval('var plateIdText = req.body.inputElements' + 0 + ";");
@@ -65,6 +94,7 @@ app.get('/runScript', (req, res) => {
         res.send('Python script executed successfully!');
     });
 });
+
 app.listen(port, () => {
     console.log(`Server is running at http://localhost:${port}`);
 });
