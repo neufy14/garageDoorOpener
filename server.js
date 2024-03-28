@@ -10,7 +10,7 @@ const port = 3000;
 app.use(bodyParser.urlencoded({ extended: true })); 
 
 // Serve static files (including the HTML page)
-app.use(express.static('public'));
+app.use(express.static('public', {index: "login.html"}));
 
 // Endpoint to fetch images
 app.get('/images', async (req, res) => {
@@ -45,17 +45,17 @@ app.post('/login', (req, res) => {
     // const jsonString = JSON.stringify(jsonData, null, 2);
     // console.log(jsonString["username"]);
     console.log('Usename from client:', req.body["username"]);
-    res.json({ message: 'Data received successfully' });
+    // res.json({ message: 'Data received successfully' });
     // Find the user in the users array (you would typically query your database here)
     const user = users.find(u => u.username === username && u.password === password);
     console.log(user);
     if (user) {
         // Authentication successful
         console.log("successfully logged in")
-        res.json({message: 'Login successful'});
+        res.json({message: 'Login successful', loginStatus: true});
     } else {
         // Authentication failed
-        res.json({message: 'Login unsuccessful'});
+        res.json({message: 'Login unsuccessful', loginStatus: false});
     }
 });
 

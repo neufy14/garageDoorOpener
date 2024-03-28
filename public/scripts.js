@@ -1,4 +1,5 @@
 //scripts.js
+var loggedIn = false;
 
 function showDoorStatus() {
     var localstorage = "";
@@ -121,6 +122,7 @@ function fetchImages(){
 }
 function loadScript() {
     // Add an event listener to the body, triggering the display function on load
+    console.log("loading index page")
     window.addEventListener('load', fetchImages);
     // window.addEventListener('load', scrollModal);
 }
@@ -340,6 +342,7 @@ function submitLogin() {
     })
     .then(response => {
         if (response.ok) {
+            console.log("Network response was OK")
             return response.json(); // If the response is OK, parse it as JSON
         } else {
             console.log(responses)
@@ -347,7 +350,13 @@ function submitLogin() {
         }
     })
     .then(data => {
-        console.log(data); // Handle the response data
+        console.log(data["loginStatus"]); // Handle the response data
+        if (data["loginStatus"] == true) {
+            console.log("logging in")
+            loggedIn = true;
+            console.log(loggedIn)
+            window.location.href = 'index.html';
+        }
         // Redirect or perform other actions based on the response
     })
     .catch(error => {
@@ -398,4 +407,12 @@ function getSettings() {
         console.log("program status at load = ", obj.runProgram);
         document.getElementById("runProgramToggle").checked = obj.runProgram;
     });
+}
+function checkLogin() {
+    console.log("checking login")
+    console.log(loggedIn)
+    if(loggedIn == false) {
+        // window.location.href = 'login.html';
+        console.log("redirected because not logged in")
+    }
 }
