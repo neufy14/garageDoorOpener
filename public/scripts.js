@@ -159,13 +159,22 @@ function showCameraFeed(){
     const camImageContainer = document.getElementById('cameraFeed');
     const imageElement = document.createElement('img');
     imageElement.src = camUrl;
+    imageElement.id = 'liveViewImg';
+    imageElement.width = 1500;
+    imageElement.height = imageElement.width / 1.8;
     camImageContainer.appendChild(imageElement)
 }
 function reloadLiveImage(){
-    setInterval(() => {
-        // Dynamically update the image source to fetch a new image
-        document.getElementById('cameraFeed').src = 'http://192.168.0.100/cgi-bin/snapshot.cgi?stream=0' + new Date().getTime();
-    }, 1000); // Refresh every 1 seconds
+    // setInterval(() => {
+    //     // Dynamically update the image source to fetch a new image
+    //     document.getElementById('cameraFeed').src = 'http://192.168.0.100/cgi-bin/snapshot.cgi?stream=0';
+    // }, 100); // Refresh every 1 seconds
+    setInterval(imageReload, 66)
+    function imageReload() {
+        document.getElementById('liveViewImg').src = 'http://192.168.0.100/cgi-bin/snapshot.cgi?stream=0';
+        // console.log("current time = ");
+        // console.log(Date.now());
+    }
 }
 function openNav() {
     document.getElementById("mySidebar").style.width = "250px";

@@ -28,5 +28,6 @@ confidenceThresh = 0.01
 setDoorPin = 16
 readDoorPin = 18
 videoBufferLength = 100
-maxStoredImages = 100
+maxStoredImages = 30
 deleteAfterTime = 30
+foundPlatesFilename = "plateNames.csv"

@@ -8,9 +8,11 @@ import time
 import datetime
 import os
 import json
+import csv
 import logging
 import cameraMode
 import uuid
+from cameraMode import adjustCamera
 from databaseScript import add2Database
 from easyocr import Reader
 from JetsonYolov5.yoloDet import YoloTRT
@@ -40,7 +42,10 @@ class garageDoorCam:
         self.stopCheckDoorThread = False
         self.programRunning = True
         self.saveBuffer = False
+        self.doorCLosed = True
         self.foundPlatesTS = []
+        localAdjustCamera = adjustCamera()
+
         frameNumber = 0
         # color = (255, 0, 0)
         thickness = 2
@@ -50,7 +55,7 @@ class garageDoorCam:
         GPIO.setup(config.readDoorPin, GPIO.IN)
         language = ['en']
         reader = Reader(language)
-
+        
         np.random.seed(42)
         print("getting model")
         model = YoloTRT(library=config.libLoc, engine=config.engineLoc, conf=config.confidenceThresh, yolo_ver="v5")
@@ -60,29 +65,34 @@ class garageDoorCam:
         print("model names = ", model.categories)
         if config.useLiveVideo:
             # start camera thread to get live video feed
-            print("starting video thread")
+            self.logger.debug("starting video thread")
             videoThread = threading.Thread(target=self.cameraThread, args=(config.videoFile,))
             videoThread.start()
             print("video thread started")
+        monitorCameraModeThread = threading.Thread(target=self.runCameraMonitor, args=(localAdjustCamera,))
+        monitorCameraModeThread.start()
         doorStatusThread = threading.Thread(target=self.checkDoor)
         doorStatusThread.start()
-        monitorCameraModeThread = threading.Thread(target=self.runCameraMonitor)
-        monitorCameraModeThread.start()
+        
+        self.logger.debug("about to enter main loop")
         while self.runProgram:
             plateFound = False
-            if self.stopCheckDoorThread:
-                doorStatusThread.join()
-                self.logger.debug("stopping check door thread to change camera")
-                if cameraMode.adjustCamera.isDaytime:
-                    modeSend = "day"
-                else:
-                    modeSend = 'night'
-                cameraMode.adjustCamera.switchMode(modeSend)
-                while cameraMode.adjustCamera.settingsChange:
-                    time.sleep(1)
-                monitorCameraModeThread.start()
-                self.stopCheckDoorThread = False
-            # print("self.readyForNewFrame = ", self.readyForNewFrame)
+            # if self.stopCheckDoorThread:
+            #     doorStatusThread.join()
+            #     self.logger.debug("stopping check door thread to change camera")
+            #     if cameraMode.adjustCamera.isDaytime:
+            #         modeSend = "day"
+            #     else:
+            #         modeSend = 'night'
+            #     self.logger.debug("about to run switch mode from main program")
+            #     localAdjustCamera.switchMode(modeSend)
+            #     self.logger.debug("past switch mode in main program")
+            #     # while cameraMode.adjustCamera.settingsChange:
+            #     #     time.sleep(1)
+            #     doorStatusThread = threading.Thread(target=self.checkDoor)
+            #     doorStatusThread.start()
+            #     self.stopCheckDoorThread = False
+            
             if self.readyForNewFrame and self.doorClosed and self.programRunning:
                 currentFrame = self.frame
                 blankImage = currentFrame.copy()
@@ -169,10 +179,21 @@ class garageDoorCam:
                                         # Convert UUID to string
                                         random_id_str = str(random_id)
                                         cv2.imwrite("foundPlateImages/" + str(currentTime) + ".jpg", currentFrame)
-                                        self.foundPlatesTS.append(currentTime)
-                                        if len(self.foundPlatesTS) > config.maxStoredImages:
-                                            image2Delete = self.foundPlatesTS.pop(0)
-                                            os.remove("foundPlateImages/" + str(image2Delete) + ".jpg")
+                                        
+                                        self.checkCsv(index, validPlate, currentTime)
+
+                                        # # old non working csv data management
+                                        # with open(config.foundPlatesFilename, mode='r') as file:
+                                        #     self.foundPlatesTS = list(csv.reader(file, delimiter=','))
+                                        #     # self.foundPlatesTS = list(json.load(file))
+                                        #     self.foundPlatesTS.append(currentTime)
+                                        #     if len(self.foundPlatesTS) > config.maxStoredImages:
+                                        #         image2Delete = self.foundPlatesTS.pop(0)
+                                        #         os.remove("foundPlateImages/" + str(image2Delete) + ".jpg")
+                                        #     # json.dump(self.foundPlatesTS, file, indent=4, sort_keys=True, default=str)
+                                        # with open(config.foundPlatesFilename, mode='w') as file:
+                                        #     write = csv.writer(file)
+                                        #     write.writerow(self.foundPlatesTS)
                                         self.checkSavedImageAge()
                                         self.saveBuffer = True
                                         break
@@ -189,6 +210,35 @@ class garageDoorCam:
         doorStatusThread.join()
         monitorCameraModeThread.join()
 
+    def checkCsv(self, idx, plate, time):
+        csvData = self.openCsv()
+        
+        if len(csvData) == 0:
+            data = [[idx, plate, time]]
+            self.foundPlatesTS = data
+            startCsv = True
+        else:
+            startCsv = False
+            data = [idx, plate, time]
+            for csvLine in csvData:
+                self.foundPlatesTS.append(csvLine)
+            self.foundPlatesTS.append(data)
+        if len(self.foundPlatesTS) > config.maxStoredImages:
+            image2Delete = self.foundPlatesTS.pop(0)
+            os.remove("foundPlateImages/" + str(image2Delete[2]) + ".jpg")
+        with open(config.foundPlatesFilename, mode='w', newline='') as file:
+            write = csv.writer(file, delimiter=',')
+            for plate in self.foundPlatesTS:
+                write.writerow(plate)
+
+
+    def openCsv(self):
+        data = []
+        with open(config.foundPlatesFilename, newline='') as csvfile:
+            reader = csv.reader(csvfile)
+            for row in reader:
+                data.append(row)
+        return data
 
     def getValidPlates(self):
         validPlate = []
@@ -202,23 +252,49 @@ class garageDoorCam:
         # print('validPlate = ', validPlate)
         return validPlate, userNames
 
-    def checkSavedImageAge(self):
+    def checkSavedImageAgeSave(self):
         currentTS = datetime.datetime.now()
         numDelete = 0
+        format = '%Y-%m-%d %H:%M:%S.%f'
+        with open(config.foundPlatesFilename, 'r') as file:
+            self.foundPlatesTS = list(csv.reader(file, delimiter=","))
+            for timestamp in self.foundPlatesTS:
+                oldTimePlusKeepTime = datetime.datetime.strptime(timestamp[2], format) + datetime.timedelta(days=config.deleteAfterTime)
+                if oldTimePlusKeepTime < currentTS:
+                    numDelete += 1
+                elif oldTimePlusKeepTime > currentTS:
+                    break
+            for i in range(0, numDelete):
+                image2Delete = self.foundPlatesTS.pop(0)
+                os.remove("foundPlateImages/" + str(image2Delete) + ".jpg")
+        with open(config.foundPlatesFilename, mode='w', newline='') as file:
+            write = csv.writer(file, delimiter=',')
+            for plate in self.foundPlatesTS:
+                write.writerow(plate)
+
+    def checkSavedImageAge(self):
+        currentTS = datetime.datetime.now()
+        index2Delete = []
+        numDelete = 0
+        format = '%Y-%m-%d %H:%M:%S.%f'
+        self.foundPlatesTS = self.openCsv()
         for timestamp in self.foundPlatesTS:
-            oldTimePlusKeepTime = timestamp + datetime.timedelta(days=config.deleteAfterTime)
+            oldTimePlusKeepTime = datetime.datetime.strptime(timestamp[2], format) + datetime.timedelta(days=config.deleteAfterTime)
             if oldTimePlusKeepTime < currentTS:
                 numDelete += 1
-            elif oldTimePlusKeepTime > currentTS:
-                break
+                index2Delete.append(int(timestamp[0]))
         for i in range(0, numDelete):
-            image2Delete = self.foundPlatesTS.pop(0)
+            image2Delete = foundPlatesTS.pop(index2Delete[i])
             os.remove("foundPlateImages/" + str(image2Delete) + ".jpg")
+        with open(config.foundPlatesFilename, mode='w', newline='') as file:
+            write = csv.writer(file, delimiter=',')
+            for plate in self.foundPlatesTS:
+                write.writerow(plate)
 
     
     def checkDoor(self):
         self.logger.debug("starting check door thread")
-        while self.runCheckDoor and not cameraMode.adjustCamera.settingsChange:
+        while self.runCheckDoor:
             if GPIO.input(config.readDoorPin) == GPIO.HIGH:
                 #Garage Door is closed
                 self.doorClosed = True
@@ -326,7 +402,8 @@ class garageDoorCam:
         self.capture = cv2.VideoCapture(filename)
         self.ret, self.frame = self.capture.read()
         fourcc = cv2.VideoWriter_fourcc(*'XVID')
-        self.out = cv2.VideoWriter(config.saveVideoFileName, fourcc, 20.0, (1920, 1080))
+        if config.saveVideo:
+            self.out = cv2.VideoWriter(config.saveVideoFileName, fourcc, 20.0, (1920, 1080))
         self.bufferOut = cv2.VideoWriter("bufferVideo.avi", fourcc, 20.0, (1920, 1080))
         while self.ret:
             self.ret, self.frame = self.capture.read()
@@ -360,8 +437,9 @@ class garageDoorCam:
         #self.bufferReadyForFrame = True
         self.bufferActive = False
 
-    def runCameraMonitor(self):
-        cameraMode.adjustCamera()
-
+    def runCameraMonitor(self, localAdjustCameraInstance):
+        self.logger.debug("runCameraMonitor")
+        localAdjustCameraInstance.checkModeVsTime()
+        # cameraMode.adjustCamera().checkModeVsTime
 
 garageDoorCam()
