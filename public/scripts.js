@@ -155,7 +155,7 @@ function scrollModal() {
 
 }
 function showCameraFeed(){
-    camUrl = 'http://192.168.0.100/cgi-bin/snapshot.cgi?stream=0';
+    camUrl = 'http://192.168.1.100/cgi-bin/snapshot.cgi?stream=0';
     const camImageContainer = document.getElementById('cameraFeed');
     const imageElement = document.createElement('img');
     imageElement.src = camUrl;
@@ -167,11 +167,11 @@ function showCameraFeed(){
 function reloadLiveImage(){
     // setInterval(() => {
     //     // Dynamically update the image source to fetch a new image
-    //     document.getElementById('cameraFeed').src = 'http://192.168.0.100/cgi-bin/snapshot.cgi?stream=0';
+    //     document.getElementById('cameraFeed').src = 'http://192.168.1.100/cgi-bin/snapshot.cgi?stream=0';
     // }, 100); // Refresh every 1 seconds
     setInterval(imageReload, 66)
     function imageReload() {
-        document.getElementById('liveViewImg').src = 'http://192.168.0.100/cgi-bin/snapshot.cgi?stream=0';
+        document.getElementById('liveViewImg').src = 'http://192.168.1.100/cgi-bin/snapshot.cgi?stream=0';
         // console.log("current time = ");
         // console.log(Date.now());
     }
@@ -294,7 +294,7 @@ function saveLicensePlates() {
             console.log(existingPlates)
             // existingPlates.validLicensePlates.push(newJsonData);
             // Send a POST request to the server
-            return fetch('http://192.168.0.42:3000/save-to-file', {
+            return fetch('http://192.168.1.42:3000/save-to-file', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -390,7 +390,7 @@ function runCheckPlateProgram() {
         else if (runLicenseProgram == false){
             obj["runProgram"] = false;
         }
-        return fetch('http://192.168.0.42:3000/save-to-file', {
+        return fetch('http://192.168.1.42:3000/save-to-file', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -424,4 +424,25 @@ function checkLogin() {
         // window.location.href = 'login.html';
         console.log("redirected because not logged in")
     }
+}
+function hlsStream() {
+    const video = document.getElementById('video');
+    const streamUrl = '/stream/output.m3u8';
+    var player = videojs(vid1);
+    // player.play();
+
+    // if (Hls.isSupported()) {
+    //     console.log("hls is supported");
+    //     const hls = new Hls();
+    //     hls.loadSource(streamUrl);
+    //     hls.attachMedia(video);
+    //     hls.on(Hls.Events.MANIFEST_PARSED, () => {
+    //         video.play();
+    //     });
+    // } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+    //     console.log("hls is not supported");
+    //     video.src = streamUrl;
+    // } else {
+    //     console.error('HLS is not supported in this browser.');
+    // }
 }
